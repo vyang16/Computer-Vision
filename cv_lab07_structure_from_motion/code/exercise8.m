@@ -39,8 +39,8 @@ showFeatureMatches(img1, fa(1:2, matches(1,:)), img2, fb(1:2, matches(2,:)), 1);
 
 x1 = [fa(1:2, matches(1,:)); ones(1,size(matches,2))];
 x2 = [fb(1:2, matches(2,:)); ones(1,size(matches,2))];
-threshold = 0.01;
-%[inliers, F] = ransac8pF(x1, x2, threshold);
+threshold = 0.05;
+%[inliers, F] = ransac8pF(x1, x2, threshold); %self implemented function
 [F, inliers] = ransacfitfundmatrix(x1, x2, threshold);
 [out1, out2] = outliers(x1, x2, inliers);
 showFeatureMatches(img1, x1(1:2, inliers), img2, x2(1:2, inliers), 2, out1, out2);
@@ -50,6 +50,18 @@ x2_in = x2(:, inliers);
 E = K'*F*K;
 x1_calibrated = K \ x1_in;
 x2_calibrated = K \ x2_in;
+
+%draw epipolar lines
+figure(40),clf, imshow(img1, []); hold on, plot(x1_in(1,:), x1_in(2,:), '*r');
+figure(50),clf, imshow(img2, []); hold on, plot(x2_in(1,:), x2_in(2,:), '*r');
+figure(40)
+for k = 1:size(x1_in,2)
+    drawEpipolarLines(F'*x2_in(:,k), img1);
+end
+figure(50)
+for k = 1:size(x2_in,2)
+    drawEpipolarLines(F*x1_in(:,k), img2);
+end
 
 Ps{1} = eye(4);
 Ps{2} = decomposeE(E, x1_calibrated, x2_calibrated);
@@ -76,19 +88,15 @@ x3_calibrated = K \ makehomogeneous(x3);
 threshold_proj = 0.1;
 [P, inliers3] = ransacfitprojmatrix(x3_calibrated, XS1_2(:, matchesac(1,:)), threshold_proj);
 XS1_2_ac = XS1_2(:, matchesac(1, inliers3));
-negative = false;
 if (det(P(1:3,1:3)) < 0 )
     P(1:3,1:3) = -P(1:3,1:3);
-    negative = true;
+    P(1:3, 4) = -P(1:3, 4);
 end
 Ps{3} = P;
 [out1ac, out2ac] = outliers(x1_ac, x3, inliers3);
 showFeatureMatches(img1, x1_ac(1:2, inliers3), img3, x3(1:2, inliers3), 3, out1ac, out2ac);
 %triangulate the inlier matches with the computed projection matrix
 [XS1_3, ~]= linearTriangulation(Ps{1}, x1_calibrated_ac(:, inliers3), Ps{3}, x3_calibrated(:, inliers3));
-if negative
-    XS1_3 = (-1)*XS1_3;
-end
 %% Add more views...
 % 4th house
 
@@ -107,10 +115,9 @@ x4_calibrated = K \ makehomogeneous(x4);
 %run 6-point ransac
 [P, inliers4] = ransacfitprojmatrix(x4_calibrated, XS1_2(:, matchesad(1,:)), threshold_proj);
 
-negative = false;
 if (det(P(1:3,1:3)) < 0 )
     P(1:3,1:3) = -P(1:3,1:3);
-    negative = true;
+    P(1:3, 4) = -P(1:3, 4);
 end
 Ps{4} = P;
 [out14, out24] = outliers(x1_ad, x4, inliers4);
@@ -118,10 +125,6 @@ showFeatureMatches(img1, x1_ad(1:2, inliers4), img4, x4(1:2, inliers4), 4, out14
 %triangulate the inlier matches with the computed projection matrix
 [XS1_4, ~]= linearTriangulation(Ps{1}, x1_calibrated_ad(:, inliers4), Ps{4}, x4_calibrated(:, inliers4));
 
-if negative
-   XS1_4 = XS1_4 * (-1);
-end
-%Last house
 
 imgName5 = '../data/house.003.pgm';
 img5 = single(imread(imgName5));
@@ -142,19 +145,16 @@ x5_calibrated = K \ makehomogeneous(x5);
 threshold_proj = 0.1;
 [P, inliers5] = ransacfitprojmatrix(x5_calibrated, XS1_2(:, matchesae(1,:)), threshold_proj);
 
-negative = false;
 if (det(P(1:3,1:3)) < 0 )
     P(1:3,1:3) = -P(1:3,1:3);
-    negative = true;
+    P(1:3, 4) = -P(1:3, 4);
 end
 Ps{5} = P;
 [out15, out25] = outliers(x1_ae, x5, inliers5);
 showFeatureMatches(img1, x1_ae(1:2, inliers5), img5, x5(1:2, inliers5), 5, out15, out25);
 %triangulate the inlier matches with the computed projection matrix
 [XS1_5, ~]= linearTriangulation(Ps{1}, x1_calibrated_ae(:, inliers5), Ps{5}, x5_calibrated(:, inliers5));
-if negative
-   XS1_5 = XS1_5 * (-1);
-end
+
 
 %% Plot stuff
 
@@ -164,8 +164,7 @@ rotate3d on
 hold on
 
 %use plot3 to plot the triangulated 3D points
-scatter3(XS1_2_ac(1,:), XS1_2_ac(2,:), XS1_2_ac(3,:), 'r.');
-%scatter3(XS1_2_ac(1,:), XS1_2_ac(2,:), XS1_2_ac(3,:), 'b.');
+scatter3(XS1_2_ac(1,:), XS1_2_ac(2,:), XS1_2_ac(3,:), 'r.'); %filter out not matched points in XS1_2
 scatter3(XS1_3(1,:), XS1_3(2,:), XS1_3(3,:), 'y.');
 scatter3(XS1_4(1,:), XS1_4(2,:), XS1_4(3,:), 'g.');
 scatter3(XS1_5(1,:), XS1_5(2,:), XS1_5(3,:), 'b.');
