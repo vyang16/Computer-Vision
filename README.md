@@ -1,4 +1,4 @@
-[# Computer-Vision](https://github.com/vyang16/Computer-Vision/tree/master/cv_lab01_camera_calibration)
+# Computer-Vision
 Exercises for the Computer Vision class at ETH
 
 ## 1 Camera Calibration
