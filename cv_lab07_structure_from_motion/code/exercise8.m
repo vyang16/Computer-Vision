@@ -5,7 +5,7 @@
 close all
 clear
 % Initialize VLFeat (http://www.vlfeat.org/)
-run('C:\Users\Viviane Yang\Downloads\vlfeat-0.9.21\toolbox\vl_setup')
+%run('C:\Users\Viviane Yang\Downloads\vlfeat-0.9.21\toolbox\vl_setup')
 
 %K Matrix for house images (approx.)
 K = [  670.0000     0     393.000
@@ -39,10 +39,11 @@ showFeatureMatches(img1, fa(1:2, matches(1,:)), img2, fb(1:2, matches(2,:)), 1);
 
 x1 = [fa(1:2, matches(1,:)); ones(1,size(matches,2))];
 x2 = [fb(1:2, matches(2,:)); ones(1,size(matches,2))];
-threshold = 50;
-[inliers, F] = ransac8pF(x1, x2, threshold);
-showFeatureMatches(img1, x1(1:2, inliers), img2, x2(1:2, inliers), 2);
-
+threshold = 0.01;
+%[inliers, F] = ransac8pF(x1, x2, threshold);
+[F, inliers] = ransacfitfundmatrix(x1, x2, threshold);
+[out1, out2] = outliers(x1, x2, inliers);
+showFeatureMatches(img1, x1(1:2, inliers), img2, x2(1:2, inliers), 2, out1, out2);
 
 x1_in = x1(:, inliers);
 x2_in = x2(:, inliers);
@@ -54,10 +55,10 @@ Ps{1} = eye(4);
 Ps{2} = decomposeE(E, x1_calibrated, x2_calibrated);
 
 %triangulate the inlier matches with the computed projection matrix
-[XS1_2, err12] = linearTriangulation(Ps{1}, x1_calibrated, Ps{2}, x2_calibrated);
+[XS1_2, ~] = linearTriangulation(Ps{1}, x1_calibrated, Ps{2}, x2_calibrated);
 %% Add an addtional view of the scene 
 
-imgName3 = '../data/house.002.pgm';
+imgName3 = '../data/house.001.pgm';
 img3 = single(imread(imgName3));
 [fc, dc] = vl_sift(img3);
 fa_in  = fa(:, matches(1, inliers));
@@ -67,27 +68,31 @@ da_in = da(:, matches(1, inliers));
 [matchesac, ~] = vl_ubcmatch(da_in, dc);
 
 x1_ac = makehomogeneous(fa_in(1:2, matchesac(1,:)));
-x3 = [fc(1:2, matchesac(2,:)); ones(1,size(matchesac,2))];
-x3_calibrated = K \ x3;
-
-
+x1_calibrated_ac = x1_calibrated(:, matchesac(1,:));
+x3 = fc(1:2, matchesac(2,:));
+x3_calibrated = K \ makehomogeneous(x3);
 
 %run 6-point ransac
 threshold_proj = 0.1;
-[P13, inliers3] = ransacfitprojmatrix(x3_calibrated, XS1_2(:, matchesac(1,:)), threshold_proj);
-Ps{3} = P13;
-if (det(Ps{3}(1:3,1:3)) < 0 )
-    Ps{3}(1:3,1:3) = -Ps{3}(1:3,1:3);
-    Ps{3}(1:3, 4) = -Ps{3}(1:3, 4);
+[P, inliers3] = ransacfitprojmatrix(x3_calibrated, XS1_2(:, matchesac(1,:)), threshold_proj);
+XS1_2_ac = XS1_2(:, matchesac(1, inliers3));
+negative = false;
+if (det(P(1:3,1:3)) < 0 )
+    P(1:3,1:3) = -P(1:3,1:3);
+    negative = true;
 end
-
-showFeatureMatches(img1, x1_ac(1:2, inliers3), img3, x3(1:2, inliers3), 3);
+Ps{3} = P;
+[out1ac, out2ac] = outliers(x1_ac, x3, inliers3);
+showFeatureMatches(img1, x1_ac(1:2, inliers3), img3, x3(1:2, inliers3), 3, out1ac, out2ac);
 %triangulate the inlier matches with the computed projection matrix
-[XS1_3, err13]= linearTriangulation(Ps{1}, K\x1_ac, Ps{3}, x3_calibrated);
+[XS1_3, ~]= linearTriangulation(Ps{1}, x1_calibrated_ac(:, inliers3), Ps{3}, x3_calibrated(:, inliers3));
+if negative
+    XS1_3 = (-1)*XS1_3;
+end
 %% Add more views...
 % 4th house
 
-imgName4 = '../data/house.001.pgm';
+imgName4 = '../data/house.002.pgm';
 img4 = single(imread(imgName4));
 [fd, dd] = vl_sift(img4);
 %match against the features from image 1 that where triangulated
@@ -95,21 +100,28 @@ img4 = single(imread(imgName4));
 [matchesad, ~] = vl_ubcmatch(da_in, dd);
 
 x1_ad = makehomogeneous(fa_in(1:2, matchesad(1,:)));
-x4 = [fc(1:2, matchesad(2,:)); ones(1,size(matchesad,2))];
-x4_calibrated = K \ x4;
+x1_calibrated_ad = x1_calibrated(:, matchesad(1,:));
+x4 = fd(1:2, matchesad(2,:));
+x4_calibrated = K \ makehomogeneous(x4);
 
 %run 6-point ransac
-[Ps{4}, inliers4] = ransacfitprojmatrix(x4_calibrated, XS1_2(:, matchesad(1,:)), threshold_proj);
+[P, inliers4] = ransacfitprojmatrix(x4_calibrated, XS1_2(:, matchesad(1,:)), threshold_proj);
 
-if (det(Ps{4}(1:3,1:3)) < 0 )
-    Ps{4}(1:3,1:3) = -Ps{4}(1:3,1:3);
-    Ps{4}(1:3, 4) = -Ps{4}(1:3, 4);
+negative = false;
+if (det(P(1:3,1:3)) < 0 )
+    P(1:3,1:3) = -P(1:3,1:3);
+    negative = true;
 end
-
-showFeatureMatches(img1, x1_ad(1:2, inliers4), img4, x4(1:2, inliers4), 4);
+Ps{4} = P;
+[out14, out24] = outliers(x1_ad, x4, inliers4);
+showFeatureMatches(img1, x1_ad(1:2, inliers4), img4, x4(1:2, inliers4), 4, out14, out24);
 %triangulate the inlier matches with the computed projection matrix
-[XS1_4, err14]= linearTriangulation(Ps{1}, K\x1_ad, Ps{4}, x4_calibrated);
-% Last house
+[XS1_4, ~]= linearTriangulation(Ps{1}, x1_calibrated_ad(:, inliers4), Ps{4}, x4_calibrated(:, inliers4));
+
+if negative
+   XS1_4 = XS1_4 * (-1);
+end
+%Last house
 
 imgName5 = '../data/house.003.pgm';
 img5 = single(imread(imgName5));
@@ -120,29 +132,44 @@ img5 = single(imread(imgName5));
 [matchesae, ~] = vl_ubcmatch(da_in, de);
 
 x1_ae = makehomogeneous(fa_in(1:2, matchesae(1,:)));
-x5 = [fe(1:2, matchesae(2,:)); ones(1,size(matchesae,2))];
-x5_calibrated = K \ x5;
+x1_calibrated_ae = x1_calibrated(:, matchesae(1,:));
+x5 = fe(1:2, matchesae(2,:));
+x5_calibrated = K \ makehomogeneous(x5);
 
 
 
 %run 6-point ransac
-% threshold_proj = 0.1;
-% [P{5}, inliers5] = ransacfitprojmatrix(x5_calibrated, XS1_2(:, matchesae(1,:)), threshold_proj);
-% % if (det(Ps{5}(1:3,1:3)) < 0 )
-% %     Ps{5}(1:3,1:3) = -Ps{5}(1:3,1:3);
-% %     Ps{5}(1:3, 4) = -Ps{5}(1:3, 4);
-% % end
-% 
-% showFeatureMatches(img1, x1_ae(1:2, inliers5), img5, x5(1:2, inliers5), 3);
-% %triangulate the inlier matches with the computed projection matrix
-% [XS1_5, err15]= linearTriangulation(Ps{1}, K\x1_ae, Ps{5}, x5_calibrated);
+threshold_proj = 0.1;
+[P, inliers5] = ransacfitprojmatrix(x5_calibrated, XS1_2(:, matchesae(1,:)), threshold_proj);
+
+negative = false;
+if (det(P(1:3,1:3)) < 0 )
+    P(1:3,1:3) = -P(1:3,1:3);
+    negative = true;
+end
+Ps{5} = P;
+[out15, out25] = outliers(x1_ae, x5, inliers5);
+showFeatureMatches(img1, x1_ae(1:2, inliers5), img5, x5(1:2, inliers5), 5, out15, out25);
+%triangulate the inlier matches with the computed projection matrix
+[XS1_5, ~]= linearTriangulation(Ps{1}, x1_calibrated_ae(:, inliers5), Ps{5}, x5_calibrated(:, inliers5));
+if negative
+   XS1_5 = XS1_5 * (-1);
+end
 
 %% Plot stuff
 
 fig = 10;
 figure(fig);
+rotate3d on
+hold on
 
 %use plot3 to plot the triangulated 3D points
-
+scatter3(XS1_2_ac(1,:), XS1_2_ac(2,:), XS1_2_ac(3,:), 'r.');
+%scatter3(XS1_2_ac(1,:), XS1_2_ac(2,:), XS1_2_ac(3,:), 'b.');
+scatter3(XS1_3(1,:), XS1_3(2,:), XS1_3(3,:), 'y.');
+scatter3(XS1_4(1,:), XS1_4(2,:), XS1_4(3,:), 'g.');
+scatter3(XS1_5(1,:), XS1_5(2,:), XS1_5(3,:), 'b.');
 %draw cameras
 drawCameras(Ps, fig);
+
+hold off
