@@ -49,11 +49,11 @@ while currentIteration <= maxIterations
 
    %write the sc_compute.m function
    disp('computing shape contexts for (deformed) model...')
-   ShapeDescriptors1 = sc_compute(currentX',nbBins_theta,nbBins_r,smallest_r,biggest_r);
+   ShapeDescriptors1 = sc_compute(currentX,nbBins_theta,nbBins_r,smallest_r,biggest_r);
    disp('done.')
       
    disp('computing shape contexts for target...')
-   ShapeDescriptors2 = sc_compute(Y',nbBins_theta,nbBins_r,smallest_r,biggest_r);
+   ShapeDescriptors2 = sc_compute(Y,nbBins_theta,nbBins_r,smallest_r,biggest_r);
    disp('done.')
 
    %set lambda here      
