@@ -1,4 +1,5 @@
 %Exercise 8 Shape Matching
+%Viviane Yang 16-944-530
 clear all;
 close all;
 dataset_name = "dataset.mat";

@@ -10,12 +10,8 @@ if nargin < 3
     display_flag = 0;
 end
 
-% X = get_samples_1(X, 100);
-% Y = get_samples_1(Y, 100);
-
- 
-X = get_sample(X, 400);
-Y = get_sample(Y, 400);
+X = get_sample(X, 100);
+Y = get_sample(Y, 100);
 
 % X = datasample(X, 100);
 % Y = datasample(Y, 100);
@@ -27,7 +23,7 @@ smallest_r = 1/8;%length of the smallest radius (assuming normalized distances)
 biggest_r = 3;%length of the biggest radius (assuming normalized distances)
 maxIterations = 6;
 
-
+figure(22);
 if display_flag
    subplot(1,2,1)
    plot(X(:,1),X(:,2),'b+')
@@ -101,7 +97,6 @@ while currentIteration <= maxIterations
       drawnow	
    end
   
-   save('tps', 'Xunwarped', 'Y', 'lambda');
    [w_x,w_y,E] = tps_model(Xunwarped,Y,lambda);
    
    
