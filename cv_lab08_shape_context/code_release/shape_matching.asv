@@ -10,17 +10,7 @@ if nargin < 3
     display_flag = 0;
 end
 
-% X = get_samples_1(X, 100);
-% Y = get_samples_1(Y, 100);
-
- 
-X = get_sample(X, 400);
-Y = get_sample(Y, 400);
-
-% X = datasample(X, 100);
-% Y = datasample(Y, 100);
-
-nbSamples = min(size(X,1), size(Y,1));
+nbSamples = size(X,1);
 nbBins_theta = 12;
 nbBins_r = 5;
 smallest_r = 1/8;%length of the smallest radius (assuming normalized distances)
@@ -45,7 +35,6 @@ if display_flag
    y = y(:);
    M = length(x);
 end
-
 
 %%%
 %%% compute correspondences
@@ -101,7 +90,7 @@ while currentIteration <= maxIterations
       drawnow	
    end
   
-   save('tps', 'Xunwarped', 'Y', 'lambda');
+   save('tps', 'Xunwarped, Y, lambda);
    [w_x,w_y,E] = tps_model(Xunwarped,Y,lambda);
    
    
@@ -140,7 +129,7 @@ while currentIteration <= maxIterations
 
    %update currentIteration
    currentIteration = currentIteration + 1;
-
+   
 end
 
 matchingCost = E;

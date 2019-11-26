@@ -1,40 +1,20 @@
-% Assume X is nx2, everything else double
+function d = sc_compute(X,nbBins_theta,nbBins_r,smallest_r,biggest_r)
+% X is nx2
+n = size(X, 1);
+d = cell(n,1);
+theta = linspace(-pi, pi, nbBins_theta);
+r = linspace(log(smallest_r), log(biggest_r), nbBins_r);
+distances = dist2(X, X);
+meanDistance = mean2(sqrt(distances));
 
-function d = sc_compute(X, nbBins_theta, nbBins_r, smallest_r, biggest_r)
-    
-    %for histogram
-    theta_step = 2*pi/nbBins_theta;
-    r_step = log(biggest_r) - log(smallest_r) / nbBins_r;
-    shift_r = mean([log(smallest_r) log(biggest_r)]);
-    n = size(X, 1);
-    %compute histogram for distances between point pi and all other points
-    %q != pi
-    hist = zeros(nbBins_r, nbBins_theta);
-    for i = 1:n
-       for j = 1:n
-          if(i == j)
-              continue;
-          end
-          dist = X(i,:) - X(j,:);
-          [theta, r] = cart2pol(dist(1), dist(2));
-          while(theta < 0)
-            theta = theta + 2*pi;
-          end
-          %add to bucket
-          if(r < smallest_r)
-               idx_r = 1;
-          elseif(r > biggest_r)
-              idx_r = nbBins_r;
-          else
-              logr = log(r) - shift_r;
-              idx_r = floor(logr/r_step)+1; %log r
-              idx_r = min(idx_r, nbBins_r);
-          end
-          
-          idx_t = floor(theta/theta_step)+1; %uniform theta
-          hist(idx_r, idx_t) = hist(idx_r, idx_t) + 1; 
-       end
-    end
-    
-    d = hist;
+for p = 1:n
+   px = X(p, :);
+   %compute distance to all 
+   dist_vec = repmat(px, size(X,1), 1) - X;
+   dist_vec(p, :) = [];
+   [TH, R]= cart2pol(dist_vec(:,1), dist_vec(:,2));
+   %save histogram to cell
+   d{p} = hist3([TH log(R/meanDistance)], 'Edges', {theta r});
+end
+
 end
