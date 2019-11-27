@@ -45,3 +45,8 @@ Exercises for the Computer Vision class at ETH
 - Visualization of camera positions and matched points
 
 ## 8 Shape Context
+- Shape context descriptors
+- Cost matrix computation
+- Hungarian algorithm to find best matches
+- Minimum distance sampling
+- Thin plate spine
