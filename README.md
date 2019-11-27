@@ -1,5 +1,5 @@
 # Computer-Vision
-Exercises for the Computer Vision class at ETH
+Exercises for 263-5902-00L Computer Vision at ETH HS2019
 
 ## 1 Camera Calibration
 - Data normalization
