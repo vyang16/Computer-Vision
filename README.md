@@ -1,5 +1,5 @@
 # Computer-Vision
-Exercises for the Computer Vision class at ETH
+Exercises for 263-5902-00L Computer Vision at ETH HS2019
 
 ## 1 Camera Calibration
 - Data normalization
@@ -45,3 +45,8 @@ Exercises for the Computer Vision class at ETH
 - Visualization of camera positions and matched points
 
 ## 8 Shape Context
+- Shape context descriptors
+- Cost matrix computation
+- Hungarian algorithm to find best matches
+- Minimum distance sampling
+- Thin plate spine
