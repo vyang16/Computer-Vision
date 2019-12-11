@@ -1,6 +1,7 @@
 function vBoW = create_bow_histograms(nameDir, vCenters)
 
-  vImgNames = dir(fullfile(nameDir,'*.png'));
+  vImgNames = dir(fullfile(nameDir,'*.jpg'));
+  vImgNames = [vImgNames; dir(fullfile(nameDir, '*.png'))];
   nImgs = length(vImgNames);  
   vBoW  = [];
   
@@ -11,7 +12,7 @@ function vBoW = create_bow_histograms(nameDir, vCenters)
   border = 8;
   
   % Extract features for all images in the given directory
-  for i=1:nImgs, 
+  for i=1:nImgs
     disp(strcat('  Processing image ', num2str(i),'...'));
     
     % load the image
@@ -19,10 +20,10 @@ function vBoW = create_bow_histograms(nameDir, vCenters)
 
     % Collect local feature points for each image
     % and compute a descriptor for each local feature point
-    ...
-    
+    features = grid_points(img, nPointsX, nPointsY, border);
+    [desc, patch] = descriptors_hog(img, features, cellWidth, cellHeight);
     % Create a BoW activation histogram for this image
-    ...
-  end;
+    vBoW = [vBoW; bow_histogram(desc, vCenters)];
+  end
     
 end

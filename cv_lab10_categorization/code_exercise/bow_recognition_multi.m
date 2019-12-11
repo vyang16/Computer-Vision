@@ -1,4 +1,4 @@
-function bow_recognition_multi(histograms,labels,vBoWPos,vBoWNeg, classifierFunction)
+function prob = bow_recognition_multi(histograms,labels,vBoWPos,vBoWNeg, classifierFunction)
   
    image_count = size(histograms,1) 
    pos = 0;
@@ -16,6 +16,6 @@ function bow_recognition_multi(histograms,labels,vBoWPos,vBoWNeg, classifierFunc
     end
     
     disp(['Percentage of correctly classified images:' num2str(pos/image_count)]);
-   
+    prob = pos/image_count;
 end
   

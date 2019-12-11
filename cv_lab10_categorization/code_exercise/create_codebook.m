@@ -1,11 +1,14 @@
 function vCenters = create_codebook(nameDirPos,nameDirNeg,k)
   
-  vImgNames = dir(fullfile(nameDirPos,'*.png'));
-  vImgNames = [vImgNames; dir(fullfile(nameDirNeg,'*.png'))];
+  vImgNames = dir(fullfile(nameDirPos,'*.jpg'));
+  vImgNames = [vImgNames; dir(fullfile(nameDirPos, '*.png'))];
+  vImgNames = [vImgNames; dir(fullfile(nameDirNeg,'*.jpg'))];
+  vImgNames = [vImgNames; dir(fullfile(nameDirNeg, '*.png'))];
   
   nImgs = length(vImgNames);
   vFeatures = zeros(0,128); % 16 histograms containing 8 bins
   vPatches = zeros(0,16*16); % 16*16 image patches 
+  
   
   cellWidth = 4;
   cellHeight = 4;
@@ -14,7 +17,7 @@ function vCenters = create_codebook(nameDirPos,nameDirNeg,k)
   border = 8;
   
   % Extract features for all images
-  for i=1:nImgs,
+  for i=1:nImgs
     
     disp(strcat('  Processing image ', num2str(i),'...'));
     
@@ -23,15 +26,14 @@ function vCenters = create_codebook(nameDirPos,nameDirNeg,k)
 
     % Collect local feature points for each image
     % and compute a descriptor for each local feature point
-    % ...
+    vPoints = grid_points(img, nPointsX, nPointsY, border);
     % create hog descriptors and patches
-    % ...	
+    [features, patches] = descriptors_hog(img, vPoints, cellWidth, cellHeight);
+    vFeatures = [vFeatures; features];
+    vPatches = [vPatches; patches];
 
-
-
-    
-    
-  end;
+  end
+  
   disp(strcat('    Number of extracted features:',num2str(size(vFeatures,1))));
 
   % Cluster the features using K-Means
@@ -43,7 +45,7 @@ function vCenters = create_codebook(nameDirPos,nameDirNeg,k)
   disp('Visualizing the codebook...');
   visualize_codebook(vCenters,vFeatures,vPatches,cellWidth,cellHeight);
   disp('Press any key to continue...');
-  pause;
+  %pause;
   
  
 
